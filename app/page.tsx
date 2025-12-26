@@ -117,11 +117,10 @@ export default function Home() {
         <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
           <h1 className="text-2xl font-bold text-[#2563eb]">CampusRent</h1>
           <Link href="/notifications" className="relative">
-            <svg className="w-6 h-6 text-gray-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M18 8A6 6 0 006 8v4l-2 2h20l-2-2V8" />
-              <path d="M13.73 21a2 2 0 01-3.46 0" />
+            <svg className="w-6 h-6 text-[#2563eb]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 22c1.1 0 2-.9 2-2H10c0 1.1.9 2 2 2z" />
+              <path d="M18 8a6 6 0 10-12 0v4l-2 2h16l-2-2V8z" />
             </svg>
-            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full"></span>
           </Link>
         </div>
       </header>

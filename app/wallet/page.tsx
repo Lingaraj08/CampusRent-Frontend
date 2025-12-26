@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { getWallet, topUpWallet, withdrawWallet } from '@/lib/api'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -26,6 +27,7 @@ export default function WalletPage() {
   const [topUpAmount, setTopUpAmount] = useState('')
   const [withdrawAmount, setWithdrawAmount] = useState('')
   const [upiId, setUpiId] = useState('')
+  const [token, setToken] = useState<string>('')
 
   useEffect(() => {
     // Load Razorpay script
@@ -37,6 +39,24 @@ export default function WalletPage() {
     return () => {
       document.body.removeChild(script)
     }
+  }, [])
+
+  useEffect(() => {
+    const loadWallet = async () => {
+      const { data: sessionData } = await supabase.auth.getSession()
+      const access = sessionData?.session?.access_token || ''
+      setToken(access)
+      if (!access) return
+      try {
+        const summary = await getWallet(access)
+        if (typeof summary.balance === 'number') setBalance(summary.balance)
+        if (typeof summary.earnings === 'number') setEarnings(summary.earnings)
+        if (summary.upi_linked) setUpiLinked(true)
+      } catch (e) {
+        console.warn('Wallet fetch failed', e)
+      }
+    }
+    loadWallet()
   }, [])
 
   const handleTopUp = () => {
@@ -61,6 +81,9 @@ export default function WalletPage() {
         setBalance((prev) => prev + amount)
         setTopUpAmount('')
         setShowTopUpModal(false)
+        if (token) {
+          topUpWallet(amount, token, response.razorpay_payment_id).catch((e) => console.warn('Top-up API failed', e))
+        }
       },
       prefill: {
         name: 'Student',
@@ -83,8 +106,12 @@ export default function WalletPage() {
     }
 
     // Process withdrawal
+    const amount = parseFloat(withdrawAmount || '0')
+    if (token) {
+      withdrawWallet(amount, token, upiId || upiId).catch((e) => console.warn('Withdraw API failed', e))
+    }
     alert(`Withdrawal request submitted for ₹${withdrawAmount}`)
-    setEarnings((prev) => prev - parseFloat(withdrawAmount || '0'))
+    setEarnings((prev) => prev - amount)
     setWithdrawAmount('')
     setShowWithdrawModal(false)
   }

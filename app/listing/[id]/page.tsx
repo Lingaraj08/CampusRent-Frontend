@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@supabase/supabase-js'
+import { createBooking } from '@/lib/api'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -88,11 +89,14 @@ export default function ListingDetailPage() {
 
   const rentNow = async () => {
     if (!listing) return
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
+    const { data: { user }, error: userErr } = await supabase.auth.getUser()
+    if (userErr || !user) {
       router.push('/auth/login')
       return
     }
+    const { data: sessionData } = await supabase.auth.getSession()
+    const token = sessionData?.session?.access_token
+    
     const options = {
       key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_xxxxx',
       amount: total * 100,
@@ -101,16 +105,19 @@ export default function ListingDetailPage() {
       description: 'Item Rental Payment',
       handler: async function (response: any) {
         alert('Payment successful! ' + response.razorpay_payment_id)
-        // Optionally record booking
-        try {
-          await supabase.from('orders').insert({
-            listing_id: listing.id,
-            renter_id: user.id,
-            days,
-            amount: total,
-            status: 'paid'
-          })
-        } catch {}
+        // Record booking in backend if token available
+        if (token) {
+          try {
+            await createBooking({
+              listing_id: listing.id,
+              days,
+              amount: total,
+              payment_id: response.razorpay_payment_id,
+            }, token)
+          } catch (e) {
+            console.warn('Booking API failed', e)
+          }
+        }
         router.push('/my-gear?tab=orders')
       },
       prefill: {
