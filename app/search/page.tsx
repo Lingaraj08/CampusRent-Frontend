@@ -135,40 +135,45 @@ export default function SearchPage() {
             </button>
           </div>
 
-          {listings.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-gray-500">No items found</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-4">
-              {listings.map((listing) => (
-                <Link key={listing.id} href={`/listings/${listing.id}`} className="bg-white rounded-2xl shadow-sm overflow-hidden">
-                  <div className="relative aspect-[4/3] bg-[#eef1f7]">
-                    {listing.image_urls?.[0] ? (
-                      <Image src={listing.image_urls[0]} alt={listing.title} fill className="object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-[#aab0c5]">No Image</div>
-                    )}
-                    <div className="absolute top-2 left-2 inline-flex items-center gap-1 px-2 py-1 rounded-full bg-white shadow text-[11px] text-[#7b819a]">
-                      <span className="text-[#f59e0b]">★</span>
-                      <span>4.8</span>
+          {(() => {
+            const data = listings.length ? listings : [{
+              id: 'demo',
+              title: 'Scientific Calculator Casio FX-991ES',
+              price: 90,
+              image_urls: ['https://images.unsplash.com/photo-1523475472560-d2df97ec485c?auto=format&fit=crop&w=600&q=80'],
+            } as any]
+
+            return (
+              <div className="grid grid-cols-2 gap-4">
+                {data.map((listing) => (
+                  <Link key={listing.id} href={`/listing/${listing.id}`} className="bg-white rounded-2xl shadow-sm overflow-hidden">
+                    <div className="relative aspect-[4/3] bg-[#eef1f7]">
+                      {listing.image_urls?.[0] ? (
+                        <Image src={listing.image_urls[0]} alt={listing.title} fill className="object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-[#aab0c5]">No Image</div>
+                      )}
+                      <div className="absolute top-2 left-2 inline-flex items-center gap-1 px-2 py-1 rounded-full bg-white shadow text-[11px] text-[#7b819a]">
+                        <span className="text-[#f59e0b]">★</span>
+                        <span>4.8</span>
+                      </div>
+                      <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-white shadow flex items-center justify-center">
+                        <svg className="w-3.5 h-3.5 text-[#f59e0b]" viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" /></svg>
+                      </div>
                     </div>
-                    <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-white shadow flex items-center justify-center">
-                      <svg className="w-3.5 h-3.5 text-[#f59e0b]" viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" /></svg>
+                    <div className="p-3">
+                      <h3 className="font-semibold text-sm text-[#1f2433] line-clamp-2">{listing.title}</h3>
+                      <div className="mt-1 flex items-center text-[12px] text-[#7b819a]">
+                        <svg className="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" /><circle cx="12" cy="9" r="2.5" /></svg>
+                        Hostel Block C
+                      </div>
+                      <p className="mt-2 text-[#2563eb] font-bold">₹{listing.price}<span className="text-xs text-[#7b819a]">/day</span></p>
                     </div>
-                  </div>
-                  <div className="p-3">
-                    <h3 className="font-semibold text-sm text-[#1f2433] line-clamp-2">{listing.title}</h3>
-                    <div className="mt-1 flex items-center text-[12px] text-[#7b819a]">
-                      <svg className="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" /><circle cx="12" cy="9" r="2.5" /></svg>
-                      Hostel Block C
-                    </div>
-                    <p className="mt-2 text-[#2563eb] font-bold">₹{listing.price}<span className="text-xs text-[#7b819a]">/day</span></p>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )}
+                  </Link>
+                ))}
+              </div>
+            )
+          })()}
         </section>
       </div>
 

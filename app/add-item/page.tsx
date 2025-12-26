@@ -10,6 +10,10 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
 
+declare global {
+  interface Window { Razorpay: any }
+}
+
 export default function AddItemPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
@@ -23,6 +27,15 @@ export default function AddItemPage() {
     category_id: '',
     meeting_location: '',
   })
+
+  // Load Razorpay script for platform fee payments
+  useEffect(() => {
+    const script = document.createElement('script')
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js'
+    script.async = true
+    document.body.appendChild(script)
+    return () => { document.body.removeChild(script) }
+  }, [])
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -51,22 +64,54 @@ export default function AddItemPage() {
         return
       }
 
+      // Charge platform fee (₹30) per listing before proceeding
+      const feePaid = await new Promise<boolean>((resolve) => {
+        const options = {
+          key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_xxxxx',
+          amount: 30 * 100,
+          currency: 'INR',
+          name: 'CampusRent',
+          description: 'Listing Platform Fee',
+          handler: function () { resolve(true) },
+          prefill: { name: user.user_metadata?.full_name || user.email, email: user.email },
+          theme: { color: '#4c40f5' },
+        }
+        const rzp = new (window as any).Razorpay(options)
+        rzp.open()
+      })
+
+      if (!feePaid) {
+        alert('Platform fee payment required to publish listing.')
+        setLoading(false)
+        return
+      }
+
       // Upload images
       const imageUrls: string[] = []
       for (const image of images) {
-        const ext = image.name.split('.').pop()
-        const fileName = `${user.id}_${Date.now()}_${Math.random().toString(36).substring(7)}.${ext}`
-        const { data, error: uploadError } = await supabase.storage
-          .from('listing-images')
-          .upload(fileName, image)
+        try {
+          const ext = image.name.split('.').pop()
+          const fileName = `${user.id}_${Date.now()}_${Math.random().toString(36).substring(7)}.${ext}`
+          const { data, error: uploadError } = await supabase.storage
+            .from('listing-images')
+            .upload(fileName, image)
 
-        if (uploadError) throw uploadError
-        
-        const { data: { publicUrl } } = supabase.storage
-          .from('listing-images')
-          .getPublicUrl(data.path)
-        
-        imageUrls.push(publicUrl)
+          if (uploadError) {
+            // Add helpful hint when bucket is missing or not public
+            const hint = uploadError.message?.toLowerCase().includes('does not exist')
+              ? 'Create a public bucket named "listing-images" in Supabase Storage and enable public access.'
+              : uploadError.message
+            throw new Error(hint || 'Image upload failed')
+          }
+          
+          const { data: { publicUrl } } = supabase.storage
+            .from('listing-images')
+            .getPublicUrl(data.path)
+          
+          imageUrls.push(publicUrl)
+        } catch (uploadErr: any) {
+          throw uploadErr
+        }
       }
 
       // Create listing
@@ -79,6 +124,7 @@ export default function AddItemPage() {
           price: parseFloat(formData.price),
           category_id: parseInt(formData.category_id),
           image_urls: imageUrls,
+          meeting_location: formData.meeting_location,
         })
 
       if (insertError) throw insertError
@@ -222,7 +268,7 @@ export default function AddItemPage() {
               </svg>
               <div>
                 <p className="text-sm font-semibold text-[#dc7609] mb-1">Fee Disclosure</p>
-                <p className="text-xs text-[#a16207]">A one-time platform fee of ₹35 applies when you list your first item. No hidden charges thereafter.</p>
+                <p className="text-xs text-[#a16207]">A platform fee of ₹30 applies per item when you publish a listing.</p>
               </div>
             </div>
           </div>
